@@ -1,103 +1,194 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useEffect } from "react";
+import { Navbar } from "./components/Navbar";
+import { SurahCard } from "./components/SurahCard";
+import { LastReadCard } from "./components/LastReadCard";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { IoSearch } from "react-icons/io5";
+import { QuranService, Surah } from "@/app/services/quran";
+import { Loader2 } from "lucide-react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const [activeFilter, setActiveFilter] = useState("sura");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showSearchBar, setShowSearchBar] = useState(false);
+  const [surahs, setSurahs] = useState<Surah[]>([]);
+  const [loadingSurahs, setLoadingSurahs] = useState(true);
+  const [errorFetchingSurahs, setErrorFetchingSurahs] = useState<string | null>(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    const fetchSurahs = async () => {
+      try {
+        const quranService = QuranService.getInstance();
+        const fetchedSurahs = await quranService.getAllSurahs();
+        setSurahs(fetchedSurahs);
+      } catch (error: any) {
+        console.error("Error fetching surahs:", error);
+        setErrorFetchingSurahs(error.message || "Gagal memuat daftar surah.");
+      } finally {
+        setLoadingSurahs(false);
+      }
+    };
+
+    fetchSurahs();
+  }, []);
+
+  const lastReadSurahs = [
+    {
+      surahName: "Al-Baqarah",
+      verseInfo: "Verse 285",
+      surahNumber: 2,
+    },
+    {
+      surahName: "Al-Mumtahanah",
+      verseInfo: "Verse 9",
+      surahNumber: 60,
+    },
+    {
+      surahName: "Al-Mulk",
+      verseInfo: "Verse 1",
+      surahNumber: 67,
+    },
+  ];
+
+  const juz = Array.from({ length: 30 }, (_, i) => ({
+    name: `Juz ${i + 1}`,
+    nameArabic: `جزء ${i + 1}`,
+    numberOfAyahs: (i + 1) * 10, // Dummy value, actual will be fetched on click
+    revelationType: "-",
+    number: i + 1,
+  }));
+
+  const hizb = Array.from({ length: 60 }, (_, i) => ({
+    name: `Hizb ${i + 1}`,
+    nameArabic: `حزب ${i + 1}`,
+    numberOfAyahs: (i + 1) * 5, // Dummy value
+    revelationType: "-",
+    number: i + 1,
+  }));
+
+  const ruku = Array.from({ length: 558 }, (_, i) => ({
+    name: `Ruku ${i + 1}`,
+    nameArabic: `ركوع ${i + 1}`,
+    numberOfAyahs: (i + 1) * 2, // Dummy value
+    revelationType: "-",
+    number: i + 1,
+  }));
+
+  const filteredSurahs = surahs.filter((surah) =>
+    surah.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    surah.nameArabic.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  return (
+    <div className="min-h-screen">
+      <Navbar onToggleSearch={() => setShowSearchBar(!showSearchBar)} />
+      <div className="container mx-auto px-4 py-8">
+        {/* Last Read Section - Hidden */}
+        {/* <h2 className="text-2xl font-bold mb-4">Terakhir Dibaca</h2>
+        <div className="flex overflow-x-auto space-x-4 pb-4 no-scrollbar mb-8">
+          {lastReadSurahs.map((item, index) => (
+            <LastReadCard
+              key={index}
+              surahName={item.surahName}
+              verseInfo={item.verseInfo}
+              surahNumber={item.surahNumber}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          ))}
+        </div> */}
+
+        {/* Filter Navigation and Content */}
+        <Tabs defaultValue="sura" value={activeFilter} onValueChange={setActiveFilter} className="w-full flex flex-col items-center">
+          <TabsList className="mb-8">
+            <TabsTrigger
+              value="sura"
+              className="px-4 py-2"
+            >
+              Surah
+            </TabsTrigger>
+            <TabsTrigger
+              value="juz"
+              className="px-4 py-2"
+            >
+              Juz
+            </TabsTrigger>
+            <TabsTrigger
+              value="hizb"
+              className="px-4 py-2"
+            >
+              Hizb
+            </TabsTrigger>
+            <TabsTrigger
+              value="ruku"
+              className="px-4 py-2"
+            >
+              Ruku
+            </TabsTrigger>
+          </TabsList>
+
+          {showSearchBar && (
+            <div className="mb-4 w-full flex justify-center">
+              <Input
+                type="text"
+                placeholder="Cari Surah, Juz, Hizb, atau Ruku..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full max-w-md"
+              />
+            </div>
+          )}
+
+          <TabsContent value="sura" className="w-full">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {loadingSurahs ? (
+                <div className="col-span-full flex justify-center items-center h-48">
+                  <Loader2 className="mr-2 h-8 w-8 animate-spin text-primary" />
+                  <span className="text-lg text-primary">Memuat Surah...</span>
+                </div>
+              ) : errorFetchingSurahs ? (
+                <div className="col-span-full text-center text-red-500 text-lg">
+                  Error: {errorFetchingSurahs}
+                </div>
+              ) : (
+                filteredSurahs.map((surah) => (
+                  <SurahCard key={surah.number} {...surah} showAiIcon={true} type="surah" />
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="juz" className="w-full">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {juz.map((juzItem) => (
+                <SurahCard key={juzItem.number} {...juzItem} showAiIcon={false} type="juz" />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="hizb" className="w-full">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {hizb.map((hizbItem) => (
+                <SurahCard key={hizbItem.number} {...hizbItem} showAiIcon={false} type="hizb" />
+              ))}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="ruku" className="w-full">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {ruku.map((rukuItem) => (
+                <SurahCard key={rukuItem.number} {...rukuItem} showAiIcon={false} type="ruku" />
+              ))}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }
